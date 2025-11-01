@@ -1,10 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Vercel Serverless Function types for TypeScript (optional but good practice)
-// For simplicity, we'll use 'any' for req/res if types aren't set up.
 // This default export is the entry point for the Vercel serverless function.
-export default async function handler(req: any, res: any) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
+        res.setHeader('Allow', ['POST']);
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
