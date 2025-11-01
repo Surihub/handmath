@@ -1,17 +1,20 @@
 import { GoogleGenAI } from "@google/genai";
 
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-  throw new Error("API_KEY environment variable not set");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+// Helper function to get the AI client, checking for the API key at the time of use.
+const getAiClient = () => {
+    const API_KEY = process.env.API_KEY;
+    if (!API_KEY) {
+        // This error will be caught by the UI and shown to the user.
+        throw new Error("Gemini API 키가 설정되지 않았습니다. Vercel 배포 설정에서 API_KEY 환경 변수를 추가해주세요.");
+    }
+    return new GoogleGenAI({ apiKey: API_KEY });
+};
 
 const model = 'gemini-2.5-flash';
 
 export const evaluateSolution = async (problem: string, solutionImageBase64: string): Promise<string> => {
     try {
+        const ai = getAiClient(); // Get client at the time of the call
         const response = await ai.models.generateContent({
             model: model,
             contents: {
@@ -39,12 +42,16 @@ export const evaluateSolution = async (problem: string, solutionImageBase64: str
         return response.text;
     } catch (error) {
         console.error("Error evaluating solution:", error);
+        if (error instanceof Error) {
+            throw new Error(`풀이 피드백을 받는 데 실패했습니다: ${error.message}`);
+        }
         throw new Error("풀이 피드백을 받는 데 실패했습니다.");
     }
 };
 
 export const getHint = async (problem: string): Promise<string> => {
     try {
+        const ai = getAiClient();
         const response = await ai.models.generateContent({
             model: model,
             contents: `당신은 수학 튜터입니다. 학생이 다음 문제로 어려움을 겪고 있습니다: "${problem}". 학생이 시작하거나 다음 단계로 나아가는 데 도움이 될 작고 간단한 힌트 하나만 제공해주세요. 문제를 직접 풀거나 최종 답을 알려주지 마세요. 힌트는 학생이 생각하도록 유도해야 합니다.`,
@@ -52,12 +59,16 @@ export const getHint = async (problem: string): Promise<string> => {
         return response.text;
     } catch (error) {
         console.error("Error getting hint:", error);
+        if (error instanceof Error) {
+            throw new Error(`힌트를 받는 데 실패했습니다: ${error.message}`);
+        }
         throw new Error("힌트를 받는 데 실패했습니다.");
     }
 };
 
 export const recognizeFormula = async (formulaImageBase64: string): Promise<string> => {
     try {
+        const ai = getAiClient();
         const response = await ai.models.generateContent({
             model: model,
             contents: {
@@ -77,6 +88,9 @@ export const recognizeFormula = async (formulaImageBase64: string): Promise<stri
         return response.text;
     } catch (error) {
         console.error("Error recognizing formula:", error);
+         if (error instanceof Error) {
+            throw new Error(`수식을 인식하는 데 실패했습니다: ${error.message}`);
+        }
         throw new Error("수식을 인식하는 데 실패했습니다.");
     }
 };
